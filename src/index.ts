@@ -1,48 +1,64 @@
-class Vector2D {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
+interface Vector2D {
+    x: number;
+    y: number;
 }
 
-class Player {
+
+class GameObject {
+    process(delta: number) {}
+    render(ctx: CanvasRenderingContext2D) {}
+}
+
+enum Direction {
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
+}
+
+class Player extends GameObject {
+
+    private direction: Direction;
+    private speed: number;
+    private position: Vector2D;
 
     constructor() {
+        super();
         window.addEventListener('keydown', this.keyDownHandler.bind(this));
-        this.direction = "Right";
+        this.direction = Direction.RIGHT;
         this.speed = 40;
-        this.position = new Vector2D(100, 100);
+        this.position = { x: 100, y: 100 };
     }
 
-    keyDownHandler(event) {
+    keyDownHandler(event: KeyboardEvent) {
         switch(event.key) {
             case "ArrowLeft":
-                this.direction = "Left";
+                this.direction = Direction.LEFT;
                 break;
             case "ArrowRight":
-                this.direction = "Rgiht";
+                this.direction = Direction.RIGHT;
                 break;
             case "ArrowUp":
-                this.direction = "Up";
+                this.direction = Direction.UP;
                 break;
             case "ArrowDown":
-                this.direction = "Down";
+                this.direction = Direction.DOWN;
                 break;
         }
     }
 
-    process(delta) {
+    process(delta:number) {
         switch(this.direction) {
-            case "Left":
+            case Direction.LEFT:
                 this.position.x -= this.speed*delta;
                 break;
-            case "Right":
+            case Direction.RIGHT:
                 this.position.x += this.speed*delta;
                 break;
-            case "Up":
+            case Direction.UP:
                 this.position.y -= this.speed*delta;
                 break;
-            case "Down":
+            case Direction.DOWN:
                 this.position.y += this.speed*delta;
                 break;
         }
@@ -53,38 +69,38 @@ class Player {
         if (this.position.y > 380) this.position.y = 380;
     }
 
-    render(ctx) {
+    render(ctx: CanvasRenderingContext2D) {
         const time = Math.floor(Date.now()/1000);
         ctx.fillStyle = '#fcdf03';
         ctx.beginPath();
         ctx.moveTo(Math.floor(this.position.x/40)*40 + 20, Math.floor(this.position.y/40)*40 + 20);
         if(time%2) {
             switch(this.direction) {
-                case "Up":
+                case Direction.UP:
                     ctx.arc(Math.floor(this.position.x/40)*40 + 20, Math.floor(this.position.y/40)*40 + 20, 16, -0.25*Math.PI, 1.25*Math.PI);
                     break;
-                case "Down":
+                case Direction.DOWN:
                     ctx.arc(Math.floor(this.position.x/40)*40 + 20, Math.floor(this.position.y/40)*40 + 20, 16, 0.75*Math.PI, 0.25*Math.PI);
                     break;
-                case "Left":
+                case Direction.LEFT:
                     ctx.arc(Math.floor(this.position.x/40)*40 + 20, Math.floor(this.position.y/40)*40 + 20, 16, 1.25*Math.PI, 0.75*Math.PI);
                     break
-                case "Right":
+                case Direction.RIGHT:
                     ctx.arc(Math.floor(this.position.x/40)*40 + 20, Math.floor(this.position.y/40)*40 + 20, 16, 0.25*Math.PI, -0.25*Math.PI);
                     break;
             }
         } else {
             switch(this.direction) {
-                case "Up":
+                case Direction.UP:
                     ctx.arc(Math.floor(this.position.x/40)*40 + 20, Math.floor(this.position.y/40)*40 + 20, 16, -0.5*Math.PI, 1.5*Math.PI);
                     break;
-                case "Down":
+                case Direction.DOWN:
                     ctx.arc(Math.floor(this.position.x/40)*40 + 20, Math.floor(this.position.y/40)*40 + 20, 16, -1.5*Math.PI, 0.5*Math.PI);
                     break;
-                case "Left":
+                case Direction.LEFT:
                     ctx.arc(Math.floor(this.position.x/40)*40 + 20, Math.floor(this.position.y/40)*40 + 20, 16, 1*Math.PI, -1*Math.PI);
                     break
-                case "Right":
+                case Direction.RIGHT:
                     ctx.arc(Math.floor(this.position.x/40)*40 + 20, Math.floor(this.position.y/40)*40 + 20, 16, 0*Math.PI, 2*Math.PI);
                     break;
             }
@@ -95,12 +111,16 @@ class Player {
     }
 }
 
-class Chip {
-    constructor(x, y) {
-        this.position = new Vector2D(x,y);
+class Chip extends GameObject {
+
+    private position: Vector2D;
+
+    constructor(x: number, y:number) {
+        super();
+        this.position ={ x, y };
     }
 
-    render(ctx) {
+    render(ctx: CanvasRenderingContext2D) {
         ctx.fillStyle = '#fcdf03';
         ctx.beginPath();
         ctx.arc(this.position.x, this.position.y, 5, 0*Math.PI, 2*Math.PI);
@@ -109,18 +129,25 @@ class Chip {
 }
 
 class Game {
-    constructor(canvas) {
+
+    private canvas: HTMLCanvasElement;
+    private ctx: CanvasRenderingContext2D;
+    private lastTimestamp: number;
+    private objects: GameObject[];
+
+    constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
-        this.ctx = this.canvas.getContext("2d");
+        const ctx = this.canvas.getContext("2d")!;
+        this.ctx = ctx;
         this.objects = [];
         this.lastTimestamp = 0;
     }
 
-    addObject(obj) {
+    addObject(obj: GameObject) {
         this.objects.push(obj);
     }
 
-    process(delta) {
+    process(delta: number) {
         for(let obj of this.objects) {
             obj.process(delta);
         }
@@ -147,11 +174,11 @@ class Game {
     }
 }
 
-const game = new Game(document.getElementById("game"));
-game.addObject(new Player());
+const game = new Game(document.getElementById("game")! as HTMLCanvasElement);
 for (let i = 0; i < 15; i++) {
     for (let j = 0; j < 10; j++) {
         game.addObject(new Chip(i*40+20, j*40+20));
     }
 }
+game.addObject(new Player());
 game.run();
